@@ -21,7 +21,7 @@ function Main() {
       setAutoSearchList(data);
       setIsAutoSearch(true);
     } catch (e) {
-      console.log(e);
+      console.log(e.error);
     }
   };
 
@@ -72,27 +72,33 @@ function Main() {
         <ListWrapper>
           {isAutoSearch ? (
             <AutoSearchListWrapper>
-              {autoSearchList.slice(0, 10).map((list) => (
+              {autoSearchList.length ? (
+                autoSearchList.slice(0, 10).map((list) => (
+                  <AutoSaerchList>
+                    <SvgContainer>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="1.5"
+                        stroke="currentColor"
+                        style={{ width: "15px" }}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                        />
+                      </svg>
+                    </SvgContainer>
+                    <div>{list.sickNm}</div>
+                  </AutoSaerchList>
+                ))
+              ) : (
                 <AutoSaerchList>
-                  <SvgContainer>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      style={{ width: "15px" }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                      />
-                    </svg>
-                  </SvgContainer>
-                  <div>{list.sickNm}</div>
+                  <div>검색어 없음</div>
                 </AutoSaerchList>
-              ))}
+              )}
             </AutoSearchListWrapper>
           ) : null}
           {serachClinic?.map((sick) => (
@@ -168,11 +174,13 @@ const AutoSearchListWrapper = styled.ul`
   background-color: #fff;
 `;
 const AutoSaerchList = styled.li`
+  margin-top: 20px;
+  font-weight: 550;
   padding: 10px;
   height: 50px;
   display: flex;
 `;
 const SvgContainer = styled.div`
   margin-right: 10px;
-`
+`;
 export default Main;
