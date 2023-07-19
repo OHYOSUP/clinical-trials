@@ -17,8 +17,7 @@ function Main() {
       const { data } = await axios.get(`http://localhost:4000/sick?q=${value}`);
       setAutoSearchKeyword(value);
       setAutoSearchList(data);
-      setIsAutoSearch(true);
-      console.log(autoSearchList);
+      setIsAutoSearch(true);      
       console.log("calling api");
     } catch (e) {
       console.log(e);
@@ -35,8 +34,7 @@ function Main() {
     setDebounceResulValue(searchValue);
   };
 
-  const debouncedSearchTerm = useDebounce(autoSearchKeyword, 500);
-
+const debouncedDataCaching = useCallback(
   function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -51,6 +49,10 @@ function Main() {
 
     return debouncedValue;
   }
+,[])
+  
+const debouncedSearchTerm = debouncedDataCaching(autoSearchKeyword, 500);
+
 
   useEffect(() => {
     if (debouncedSearchTerm) {
@@ -97,7 +99,7 @@ function Main() {
 
         <Form onSubmit={onSubmit}>
           <Input
-            type="text"
+            type="text"            
             placeholder="질환명을 입력해 주세요"
             onChange={autoSearchKeywordChange}
           />
@@ -107,7 +109,7 @@ function Main() {
           {isAutoSearch && autoSearchList.length ? (
             <AutoSearchListWrapper>
               {autoSearchList.slice(0, 10).map((list) => (
-                <AutoSaerchList>
+                <AutoSaerchList key = {list.sickCd}>
                   <SvgContainer>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
