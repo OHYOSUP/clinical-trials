@@ -1,28 +1,70 @@
 import axios from "axios";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { ClinicContext } from "../context/useClinic";
 import styled from "styled-components";
 
 function Main() {
   const { clinic, setClinic } = useContext(ClinicContext);
   const [input, setInput] = useState("");
-  const [focusIndex, setFocusIndex] = useState(-1);
   const [serachClinic, setSearchClinic] = useState([]);
   const [autoSearchKeyword, setAutoSearchKeyword] = useState("");
   const [isAutoSearch, setIsAutoSearch] = useState(false);
   const [autoSearchList, setAutoSearchList] = useState([]);
+  const [debounceResultValue, setDebounceResulValue] = useState('');
 
-  const onSearchChange = async (e) => {
-    const value = e.target.value;
-    setInput(value);
+
+  const getAutoSearchList = useCallback(async (value) => {
     try {
       const { data } = await axios.get(`http://localhost:4000/sick?q=${value}`);
       setAutoSearchKeyword(value);
       setAutoSearchList(data);
       setIsAutoSearch(true);
+      console.log("calling api");
     } catch (e) {
-      console.log(e.error);
+      console.log(e);
     }
+  }, []);
+
+  const debounceChange = (e) => {
+    const value = e.currentTarget.value
+    setInput(value);
+    getAutoSearchList(value);
+    
+  };
+
+  const debounceValueChange = (searchValue) => {
+    setDebounceResulValue(searchValue);
+  };
+
+  const debouncedSearchTerm = useDebounce(autoSearchKeyword, 1000);
+
+  function useDebounce(value, delay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+
+    return debouncedValue;
+  }
+
+  useEffect(() => {
+    if (debouncedSearchTerm) {
+      debounceValueChange(debouncedSearchTerm);
+    } else {
+      setDebounceResulValue('');
+    }
+  }, [debouncedSearchTerm]);
+
+  const onSearchChange = async (e) => {
+    const value = e.target.value;
+    setInput(value);
+    getAutoSearchList(value);
   };
 
   const onSubmit = (e) => {
@@ -36,17 +78,17 @@ function Main() {
     console.log(filteredData);
   };
 
-  useEffect(() => {
-    // if(isAutoSearch) return;
+  const getIssues = useCallback(async () => {
+    try {
+      const { data } = await axios.get("http://localhost:4000/sick");
+      console.log("calling api");
+      setClinic(data);
+    } catch (e) {
+      console.log(e.error);
+    }
+  }, []);
 
-    const getIssues = async () => {
-      try {
-        const { data } = await axios.get("http://localhost:4000/sick");
-        setClinic(data);
-      } catch (e) {
-        console.log(e.error);
-      }
-    };
+  useEffect(() => {
     getIssues();
   }, []);
 
@@ -64,43 +106,40 @@ function Main() {
           <Input
             type="text"
             placeholder="질환명을 입력해 주세요"
-            onChange={onSearchChange}
-            // onKeyUp={handleKeyUp}
+            onChange={debounceChange}
           />
           <SubmitBtn type="submit">검색</SubmitBtn>
         </Form>
         <ListWrapper>
-          {isAutoSearch ? (
+          {isAutoSearch && autoSearchList.length ? (
             <AutoSearchListWrapper>
-              {autoSearchList.length ? (
-                autoSearchList.slice(0, 10).map((list) => (
-                  <AutoSaerchList>
-                    <SvgContainer>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        style={{ width: "15px" }}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                        />
-                      </svg>
-                    </SvgContainer>
-                    <div>{list.sickNm}</div>
-                  </AutoSaerchList>
-                ))
-              ) : (
+              {autoSearchList.slice(0, 10).map((list) => (
                 <AutoSaerchList>
-                  <div>검색어 없음</div>
+                  <SvgContainer>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
+                      style={{ width: "15px" }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                      />
+                    </svg>
+                  </SvgContainer>
+                  <div>{list.sickNm}</div>
                 </AutoSaerchList>
-              )}
+              ))}
             </AutoSearchListWrapper>
-          ) : null}
+          ) : (
+            <AutoSearchListWrapper>
+              <AutoSaerchList>검색어 없음</AutoSaerchList>
+            </AutoSearchListWrapper>
+          )}
           {serachClinic?.map((sick) => (
             <ListItemWrapper key={sick.sickCd}>{sick.sickNm}</ListItemWrapper>
           ))}
@@ -174,11 +213,11 @@ const AutoSearchListWrapper = styled.ul`
   background-color: #fff;
 `;
 const AutoSaerchList = styled.li`
-  margin-top: 20px;
-  font-weight: 550;
   padding: 10px;
   height: 50px;
   display: flex;
+  margin-top: 15px;
+  font-weight: bold;  
 `;
 const SvgContainer = styled.div`
   margin-right: 10px;
