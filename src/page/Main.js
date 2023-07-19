@@ -10,39 +10,38 @@ function Main() {
   const [autoSearchKeyword, setAutoSearchKeyword] = useState("");
   const [isAutoSearch, setIsAutoSearch] = useState(false);
   const [autoSearchList, setAutoSearchList] = useState([]);
-  const [debounceResultValue, setDebounceResulValue] = useState('');
+  const [debounceResultValue, setDebounceResulValue] = useState("");
 
-
-  const getAutoSearchList = useCallback(async (value) => {
+  const getAutoSearchList = async (value) => {
     try {
       const { data } = await axios.get(`http://localhost:4000/sick?q=${value}`);
       setAutoSearchKeyword(value);
       setAutoSearchList(data);
       setIsAutoSearch(true);
+      console.log(autoSearchList);
       console.log("calling api");
     } catch (e) {
       console.log(e);
     }
-  }, []);
+  };
 
-  const debounceChange = (e) => {
-    const value = e.currentTarget.value
+  const autoSearchKeywordChange = (e) => {
+    const value = e.currentTarget.value;
+    setAutoSearchKeyword(value);
     setInput(value);
-    getAutoSearchList(value);
-    
   };
 
   const debounceValueChange = (searchValue) => {
     setDebounceResulValue(searchValue);
   };
 
-  const debouncedSearchTerm = useDebounce(autoSearchKeyword, 1000);
+  const debouncedSearchTerm = useDebounce(autoSearchKeyword, 500);
 
   function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
       const handler = setTimeout(() => {
-        setDebouncedValue(value);
+        getAutoSearchList(value);
       }, delay);
 
       return () => {
@@ -57,15 +56,9 @@ function Main() {
     if (debouncedSearchTerm) {
       debounceValueChange(debouncedSearchTerm);
     } else {
-      setDebounceResulValue('');
+      setDebounceResulValue("");
     }
   }, [debouncedSearchTerm]);
-
-  const onSearchChange = async (e) => {
-    const value = e.target.value;
-    setInput(value);
-    getAutoSearchList(value);
-  };
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -106,7 +99,7 @@ function Main() {
           <Input
             type="text"
             placeholder="질환명을 입력해 주세요"
-            onChange={debounceChange}
+            onChange={autoSearchKeywordChange}
           />
           <SubmitBtn type="submit">검색</SubmitBtn>
         </Form>
@@ -217,7 +210,7 @@ const AutoSaerchList = styled.li`
   height: 50px;
   display: flex;
   margin-top: 15px;
-  font-weight: bold;  
+  font-weight: bold;
 `;
 const SvgContainer = styled.div`
   margin-right: 10px;
